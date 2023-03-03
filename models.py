@@ -6,13 +6,6 @@ from app import db
 # Models.
 #----------------------------------------------------------------------------#
 
-# Association table - composite primary key
-show = db.Table('Show',
-  db.Column('artist_id', db.Integer, db.ForeignKey('Artist.id'), primary_key=True),
-  db.Column('venue_id', db.Integer, db.ForeignKey('Venue.id'), primary_key=True),
-  db.Column('start_time', db.DateTime, primary_key=True)
-)
-
 class Venue(db.Model):
   __tablename__ = 'Venue'
 
@@ -28,13 +21,11 @@ class Venue(db.Model):
   website = db.Column(db.String(300))
   seeking_talent = db.Column(db.Boolean, default=False)
   seeking_description = db.Column(db.String(300))
-  shows = db.relationship(
-    'Artist',
-    secondary=show,
-    backref='Venue',
-    lazy=True,
-    cascade = 'save-update' #keep past shows data
-  )
+  shows = db.relationship('Show', backref= db.backref('Venue', lazy=True))
+  
+  def __repr__(self):
+    return f'<Venue ID: {self.id}, name: {self.name}>'
+
 
 class Artist(db.Model):
   __tablename__ = 'Artist'
@@ -50,10 +41,19 @@ class Artist(db.Model):
   website = db.Column(db.String(300))
   seeking_venue = db.Column(db.Boolean, default=False)
   seeking_description = db.Column(db.String(300))
-  shows = db.relationship(
-    'Venue',
-    secondary=show,
-    backref='Artist',
-    lazy=True,
-    cascade = 'save-update'
-  )
+  shows = db.relationship('Show', backref= db.backref('Artist', lazy=True))
+
+  def __repr__(self):
+    return f'<Artist ID: {self.id}, name: {self.name}>'
+
+
+# Composite primary key
+class Show(db.Model):
+  __tablename__ = 'Show'
+  
+  artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), primary_key=True)
+  venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key=True)
+  start_time = db.Column(db.DateTime, primary_key=True)
+  
+  def __repr__(self):
+    return f'<Artist: {self.artist_id}, venue: {self.venue_id}>, start_time: {self.start_time}'

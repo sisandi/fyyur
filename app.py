@@ -2,7 +2,6 @@
 # Imports
 #----------------------------------------------------------------------------#
 
-import json
 import logging
 from logging import FileHandler, Formatter
 
@@ -15,7 +14,7 @@ from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import Form
 from forms import *
-
+from collections import defaultdict
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -62,28 +61,29 @@ def index():
 @app.route('/venues')
 def venues():
   # TODO: replace with real venues data.
-  #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{ 
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
+  #num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
+  
+  group = defaultdict(list)
+  data = []
+
+  vens = Venue.query.all()
+  for venue in vens:
+    v ={
+      "id": venue.id,
+      "name": venue.name,
+      "num_upcoming_shows": Show.query.filter(Show.venue_id == venue.id, Show.start_time > datetime.now()).count()
+    }
+
+    group[f'{venue.city},{venue.state}'].append(v)
+
+  for city_state in group.keys():
+    data.append(
+      {"city": city_state.split(',')[0],
+       "state": city_state.split(',')[1],
+       "venues": group[city_state]
+      }
+   ) 
+
   return render_template('pages/venues.html', areas=data);
 
 @app.route('/venues/search', methods=['POST'])
@@ -488,7 +488,7 @@ if not app.debug:
 
 # Default port:
 if __name__ == '__main__':
-    app.run()
+  app.run()
 
 # Or specify port manually:
 '''
