@@ -63,8 +63,6 @@ def index():
 
 @app.route("/venues")
 def venues():
-    # Replaced with real venues data.
-    # num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
 
     group = defaultdict(list)
     data = []
@@ -222,6 +220,8 @@ def create_venue_form():
 
 @app.route("/venues/create", methods=["POST"])
 def create_venue_submission():
+    """Venue data add with address data all standardized to be uppercase"""
+    
     form = VenueForm(request.form)
 
     if form.validate():
@@ -298,21 +298,16 @@ def delete_venue(venue_id):
 #  ----------------------------------------------------------------
 @app.route("/artists")
 def artists():
-    # TODO: replace with real data returned from querying the database
-    data = [
-        {
-            "id": 4,
-            "name": "Guns N Petals",
-        },
-        {
-            "id": 5,
-            "name": "Matt Quevedo",
-        },
-        {
-            "id": 6,
-            "name": "The Wild Sax Band",
-        },
-    ]
+
+    data = []
+    
+    artists = Artist.query.order_by(Artist.name).all()
+    for artist in artists:
+        data.append({
+            "id": artist.id,
+            "name": artist.name
+        })
+    
     return render_template("pages/artists.html", artists=data)
 
 
@@ -437,8 +432,10 @@ def create_artist_form():
 
 @app.route("/artists/create", methods=["POST"])
 def create_artist_submission():
+    """Artist data add with address data all standardized to be upper case"""
+    
     # called upon submitting the new artist listing form
-    # TODO: insert form data as a new Venue record in the db, instead
+    # TODO: insert form data as a new Artist record in the db, instead
     # TODO: modify data to be the data object returned from db insertion
 
     form = ArtistForm(request.form)
@@ -459,22 +456,20 @@ def create_artist_submission():
             return render_template("forms/new_artist.html", form=form)
 
         try:
-            venue = Artist(
-                id=7,
+            artist = Artist(
                 name=form.name.data,
                 city=form.city.data.upper(),
                 state=form.state.data,
-                address=form.address.data.upper(),
                 phone=form.phone.data,
                 image_link=form.image_link.data,
                 genres=",".join(form.genres.data),
                 facebook_link=form.facebook_link.data,
                 website=form.website_link.data,
-                seeking_talent=form.seeking_talent.data,
+                seeking_venue=form.seeking_venue.data,
                 seeking_description=form.seeking_description.data,
             )
 
-            db.session.add(venue)
+            db.session.add(artist)
             db.session.commit()
 
             flash("Artist " + request.form["name"] + " was successfully listed!")
@@ -497,21 +492,9 @@ def create_artist_submission():
             for err in errorMessages:
                 flash("An error occurred. " + err)
                 return render_template("forms/new_artist.html", form=form)    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
-    # on successful db insert, flash success
-    flash("Artist " + request.form["name"] + " was successfully listed!")
     # TODO: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
-    return render_template("pages/home.html")
 
 
 #  Update
