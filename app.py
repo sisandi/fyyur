@@ -598,12 +598,55 @@ def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
     # TODO: insert form data as a new Show record in the db, instead
 
-    # on successful db insert, flash success
-    flash("Show was successfully listed!")
+    form = ShowForm(request.form)
+
+    if form.validate():
+        
+        if (
+            Show.query.filter(
+                Show.artist_id == form.artist_id.data,
+                Show.venue_id == form.venue_id.data,
+                Show.start_time == form.start_time.data,
+            ).count()
+            > 0
+        ):
+            flash(
+                "Looks like this show's already in the books! To edit show information, see the show's details page and click the 'edit' button"
+            )
+            return render_template("forms/new_show.html", form=form)
+
+        try:
+            show = Show(
+                artist_id=form.artist_id.data,
+                venue_id=form.venue_id.data.upper(),
+                start_time=form.start_time.data
+            )
+
+            db.session.add(show)
+            db.session.commit()
+
+            flash("Show was successfully listed!")
+            return render_template("pages/home.html")
+
+        except ValueError as e:
+            flash(
+                "An error occurred. Your show could not be listed at this time. Please try again."
+            )
+            db.session.rollback()
+            return render_template("forms/new_show.html", form=form)
+
+        finally:
+            db.session.close()
+
+    else:
+        for fieldName, errorMessages in form.errors.items():
+            for err in errorMessages:
+                flash("An error occurred. " + err)
+                return render_template("forms/new_show.html", form=form)
+
     # TODO: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Show could not be listed.')
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    return render_template("pages/home.html")
 
 
 @app.errorhandler(404)
