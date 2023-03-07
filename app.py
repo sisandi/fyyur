@@ -4,6 +4,7 @@
 
 import logging
 from logging import FileHandler, Formatter
+from datetime import datetime
 
 import babel
 import dateutil.parser
@@ -63,7 +64,6 @@ def index():
 
 @app.route("/venues")
 def venues():
-
     group = defaultdict(list)
     data = []
 
@@ -221,7 +221,7 @@ def create_venue_form():
 @app.route("/venues/create", methods=["POST"])
 def create_venue_submission():
     """Venue data add with address data all standardized to be uppercase"""
-    
+
     form = VenueForm(request.form)
 
     if form.validate():
@@ -298,16 +298,12 @@ def delete_venue(venue_id):
 #  ----------------------------------------------------------------
 @app.route("/artists")
 def artists():
-
     data = []
-    
+
     artists = Artist.query.order_by(Artist.name).all()
     for artist in artists:
-        data.append({
-            "id": artist.id,
-            "name": artist.name
-        })
-    
+        data.append({"id": artist.id, "name": artist.name})
+
     return render_template("pages/artists.html", artists=data)
 
 
@@ -433,7 +429,7 @@ def create_artist_form():
 @app.route("/artists/create", methods=["POST"])
 def create_artist_submission():
     """Artist data add with address data all standardized to be upper case"""
-    
+
     # called upon submitting the new artist listing form
     # TODO: insert form data as a new Artist record in the db, instead
     # TODO: modify data to be the data object returned from db insertion
@@ -491,7 +487,7 @@ def create_artist_submission():
         for fieldName, errorMessages in form.errors.items():
             for err in errorMessages:
                 flash("An error occurred. " + err)
-                return render_template("forms/new_artist.html", form=form)    
+                return render_template("forms/new_artist.html", form=form)
 
     # TODO: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
@@ -561,50 +557,32 @@ def edit_venue_submission(venue_id):
 
 @app.route("/shows")
 def shows():
-    # displays list of shows at /shows
-    # TODO: replace with real venues data.
-    data = [
-        {
-            "venue_id": 1,
-            "venue_name": "The Musical Hop",
-            "artist_id": 4,
-            "artist_name": "Guns N Petals",
-            "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-            "start_time": "2019-05-21T21:30:00.000Z",
-        },
-        {
-            "venue_id": 3,
-            "venue_name": "Park Square Live Music & Coffee",
-            "artist_id": 5,
-            "artist_name": "Matt Quevedo",
-            "artist_image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
-            "start_time": "2019-06-15T23:00:00.000Z",
-        },
-        {
-            "venue_id": 3,
-            "venue_name": "Park Square Live Music & Coffee",
-            "artist_id": 6,
-            "artist_name": "The Wild Sax Band",
-            "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-            "start_time": "2035-04-01T20:00:00.000Z",
-        },
-        {
-            "venue_id": 3,
-            "venue_name": "Park Square Live Music & Coffee",
-            "artist_id": 6,
-            "artist_name": "The Wild Sax Band",
-            "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-            "start_time": "2035-04-08T20:00:00.000Z",
-        },
-        {
-            "venue_id": 3,
-            "venue_name": "Park Square Live Music & Coffee",
-            "artist_id": 6,
-            "artist_name": "The Wild Sax Band",
-            "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-            "start_time": "2035-04-15T20:00:00.000Z",
-        },
-    ]
+    data = []
+
+    shows = (
+        db.session.query(
+            Show.start_time,
+            Venue.id.label("venue_id"),
+            Venue.name.label("venue_name"),
+            Artist.id.label("artist_id"),
+            Artist.name.label("artist_name"),
+            Artist.image_link.label("artist_image"),
+        )
+        .join(Venue, Venue.id == Show.venue_id)
+        .join(Artist, Artist.id == Show.artist_id).order_by(Show.start_time)
+    )
+
+    for show in shows:
+        print(datetime.strftime(show.start_time, "%Y-%m-%dT%H:%M:%S.%fZ"))
+        data.append({
+            "venue_id": show.venue_id,
+            "venue_name": show.venue_name,
+            "artist_id": Show.artist_id,
+            "artist_name": show.artist_name,
+            "artist_image_link": show.artist_image,
+            "start_time": datetime.strftime(show.start_time, "%Y-%m-%dT%H:%M:%S.%fZ")
+        })
+
     return render_template("pages/shows.html", shows=data)
 
 
