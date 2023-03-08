@@ -119,6 +119,43 @@ def search_venues():
 def show_venue(venue_id):
     # shows the venue page with the given venue_id
     # TODO: replace with real venue data from the venues table, using venue_id
+    
+    if venue_id > 3:
+        venue = Venue.query.get(venue_id)
+        shows = (
+            db.session.query(
+                Show.start_time.label("start_time"),
+                Show.venue_id.label("venue_id"),
+                Artist.id.label("artist_id"),
+                Artist.name.label("artist_name"),
+                Artist.image_link.label("artist_image"),
+            )
+            .join(Artist, Artist.id == Show.artist_id)
+            
+        )        
+        # (datetime.datetime(2019, 6, 15, 23, 0), 10, 2, 'Matt Quevedo', 'https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80')
+
+        data = venue.__repr__()
+        data["past_shows"] = []
+        data["upcoming_shows"] = []
+        
+        for show in shows:
+            if show.venue_id == venue_id:
+                
+                show_data = {
+                        "artist_id": show.artist_id,
+                        "artist_name": show.artist_name,
+                        "artist_image_link": show.artist_image,
+                        "start_time": datetime.strftime(show.start_time, "%Y-%m-%dT%H:%M:%S.%fZ"),
+                }
+                
+                if show.start_time >= datetime.now():
+                    data["upcoming_shows"].append(show_data)
+                else:
+                    data["past_shows"].append(show_data)
+        
+        return render_template("pages/show_venue.html", venue=data)
+    
     data1 = {
         "id": 1,
         "name": "The Musical Hop",
@@ -334,7 +371,7 @@ def show_artist(artist_id):
     # shows the artist page with the given artist_id
     # TODO: replace with real artist data from the artist table, using artist_id
     data1 = {
-        "id": 4,
+        "id": 1,
         "name": "Guns N Petals",
         "genres": ["Rock n Roll"],
         "city": "San Francisco",
@@ -358,7 +395,7 @@ def show_artist(artist_id):
         "upcoming_shows_count": 0,
     }
     data2 = {
-        "id": 5,
+        "id": 2,
         "name": "Matt Quevedo",
         "genres": ["Jazz"],
         "city": "New York",
@@ -380,7 +417,7 @@ def show_artist(artist_id):
         "upcoming_shows_count": 0,
     }
     data3 = {
-        "id": 6,
+        "id": 3,
         "name": "The Wild Sax Band",
         "genres": ["Jazz", "Classical"],
         "city": "San Francisco",
@@ -391,19 +428,19 @@ def show_artist(artist_id):
         "past_shows": [],
         "upcoming_shows": [
             {
-                "venue_id": 3,
+                "venue_id": 10,
                 "venue_name": "Park Square Live Music & Coffee",
                 "venue_image_link": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80",
                 "start_time": "2035-04-01T20:00:00.000Z",
             },
             {
-                "venue_id": 3,
+                "venue_id": 10,
                 "venue_name": "Park Square Live Music & Coffee",
                 "venue_image_link": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80",
                 "start_time": "2035-04-08T20:00:00.000Z",
             },
             {
-                "venue_id": 3,
+                "venue_id": 10,
                 "venue_name": "Park Square Live Music & Coffee",
                 "venue_image_link": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=747&q=80",
                 "start_time": "2035-04-15T20:00:00.000Z",
@@ -573,7 +610,6 @@ def shows():
     )
 
     for show in shows:
-        print(datetime.strftime(show.start_time, "%Y-%m-%dT%H:%M:%S.%fZ"))
         data.append({
             "venue_id": show.venue_id,
             "venue_name": show.venue_name,
