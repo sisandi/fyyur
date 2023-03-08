@@ -59,8 +59,19 @@ class Artist(db.Model):
     shows = db.relationship("Show", backref=db.backref("Artist", lazy=True))
 
     def __repr__(self):
-        return f"<Artist ID: {self.id}, name: {self.name}>"
-
+        return {
+            "id": self.id,
+            "name": self.name,
+            "city": self.city,
+            "state": self.state,
+            "phone": self.phone,
+            "image_link": self.image_link,
+            "genres": [i.strip() for i in self.genres.split(',')],
+            "facebook_link": self.facebook_link,
+            "website": self.website,
+            "seeking_venue": self.seeking_venue,
+            "seeking_description": self.seeking_description,
+        }
 
 # Composite primary key
 class Show(db.Model):
