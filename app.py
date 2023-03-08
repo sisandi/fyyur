@@ -73,7 +73,7 @@ def venues():
             "id": venue.id,
             "name": venue.name,
             "num_upcoming_shows": Show.query.filter(
-                Show.venue_id == venue.id, Show.start_time > datetime.now()
+                Show.venue_id == venue.id, Show.start_time > datetime.utcnow()
             ).count(),
             "genres": venue.genres,
         }
@@ -98,22 +98,28 @@ def search_venues():
     # seach for Hop should return "The Musical Hop".
     # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
 
-    response = {
-        "count": 1,
-        "data": [
-            {
-                "id": 2,
-                "name": "The Dueling Pianos Bar",
-                "num_upcoming_shows": 0,
-            }
-        ],
-    }
-    return render_template(
-        "pages/search_venues.html",
-        results=response,
-        search_term=request.form.get("search_term", ""),
-    )
-
+    response = {"count": 0}
+    query = request.form.get('search_term', '')
+    data = Venue.query.filter(Venue.name.ilike(f'%{query}%')).all()
+    venues = []
+    
+    current_time = datetime.utcnow()
+    
+    for venue in data:
+        # count = Show.query.filter_by(venue_id = venue.id).filter(Show.start_time > current_time).count()
+        
+        venues.append({
+            "id":venue.id,
+            "name": venue.name,
+            # "num_upcoming_shows":count
+        })
+        
+        response={
+        "count": len(data),
+        "data": venues
+        }
+    
+    return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
 
 @app.route("/venues/<int:venue_id>")
 def show_venue(venue_id):
@@ -146,7 +152,7 @@ def show_venue(venue_id):
                     "start_time": datetime.strftime(show.start_time, "%Y-%m-%dT%H:%M:%S.%fZ"),
             }
             
-            if show.start_time >= datetime.now():
+            if show.start_time >= datetime.utcnow():
                 data["upcoming_shows"].append(show_data)
             else:
                 data["past_shows"].append(show_data)
@@ -258,21 +264,29 @@ def search_artists():
     # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
     # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
     # search for "band" should return "The Wild Sax Band".
-    response = {
-        "count": 1,
-        "data": [
-            {
-                "id": 4,
-                "name": "Guns N Petals",
-                "num_upcoming_shows": 0,
-            }
-        ],
-    }
-    return render_template(
-        "pages/search_artists.html",
-        results=response,
-        search_term=request.form.get("search_term", ""),
-    )
+    
+    response = {"count": 0}
+    query = request.form.get('search_term', '')
+    data = Artist.query.filter(Artist.name.ilike(f'%{query}%')).all()
+    artists = []
+    
+    current_time = datetime.utcnow()
+    
+    for artist in data:
+        # count = Show.query.filter_by(artist_id = artist.id).filter(Show.start_time > current_time).count()
+        
+        artists.append({
+            "id":artist.id,
+            "name": artist.name,
+            # "num_upcoming_shows":count
+        })
+        
+        response={
+        "count": len(data),
+        "data": artists
+        }
+    
+    return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
 
 
 @app.route("/artists/<int:artist_id>")
@@ -305,7 +319,7 @@ def show_artist(artist_id):
                     "start_time": datetime.strftime(show.start_time, "%Y-%m-%dT%H:%M:%S.%fZ"),
             }
             
-            if show.start_time >= datetime.now():
+            if show.start_time >= datetime.utcnow():
                 data["upcoming_shows"].append(show_data)
             else:
                 data["past_shows"].append(show_data)
