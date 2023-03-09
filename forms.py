@@ -15,6 +15,7 @@ from wtforms.validators import (
     Regexp,
     Optional,
     ValidationError,
+    NumberRange,
 )
 
 
@@ -47,8 +48,8 @@ def show_date_check():
 
 
 class ShowForm(FyyurBaseForm):
-    artist_id = StringField("artist_id")
-    venue_id = StringField("venue_id")
+    artist_id = IntegerField("artist_id")
+    venue_id = IntegerField("venue_id")
     start_time = DateTimeField(
         "start_time",
         validators=[DataRequired(), show_date_check()],

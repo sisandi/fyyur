@@ -105,6 +105,7 @@ def venues():
 
 @app.route("/venues/search", methods=["POST"])
 def search_venues():
+    """Source: https://knowledge.udacity.com/questions/479944"""
     # TODO: implement search on venues with partial string search. Ensure it is case-insensitive.
     # seach for Hop should return "The Musical Hop".
     # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
@@ -114,16 +115,11 @@ def search_venues():
     data = Venue.query.filter(Venue.name.ilike(f"%{query}%")).all()
     venues = []
 
-    current_time = datetime.utcnow()
-
     for venue in data:
-        # count = Show.query.filter_by(venue_id = venue.id).filter(Show.start_time > current_time).count()
-
         venues.append(
             {
                 "id": venue.id,
                 "name": venue.name,
-                # "num_upcoming_shows":count
             }
         )
 
@@ -187,6 +183,7 @@ def create_venue_submission():
     """Venue data add with address data all standardized to be uppercase"""
 
     form = VenueForm(request.form)
+    error = False
 
     if form.validate():
         if (
@@ -222,20 +219,22 @@ def create_venue_submission():
             db.session.commit()
 
             flash(request.form["name"] + " was successfully listed!")
-            return render_template("pages/home.html")
 
         except:
-            db.session.rollback()
             flash(
                 "An error occurred. Venue "
                 + request.form["name"]
                 + " could not be listed. Please try again."
             )
-
-            return render_template("forms/new_venue.html", form=form)
+            error = True
+            db.session.rollback()
 
         finally:
             db.session.close()
+            if error:
+                return render_template("forms/new_venue.html", form=form)
+            else:
+                return redirect(url_for("venues"))
 
     else:
         for fieldName, errorMessages in form.errors.items():
@@ -260,14 +259,12 @@ def delete_venue(venue_id):
 
     error = False
     try:
-        venue = Venue.query.get_or_404(venue_id)
+        venue = Venue.query.get(venue_id)
 
         db.session.delete(venue)
         db.session.commit()
 
         flash(f"{venue.name} has been successfully removed.")
-
-        return redirect(url_for("index"))
 
     except:
         db.session.rollback()
@@ -281,7 +278,9 @@ def delete_venue(venue_id):
         db.session.close()
 
         if error:
-            abort(400)
+            return redirect(url_for("show_venue", venue_id=venue_id))
+        else:
+            return redirect(url_for("venues"))
 
 
 #  Artists
@@ -299,6 +298,7 @@ def artists():
 
 @app.route("/artists/search", methods=["POST"])
 def search_artists():
+    """Source: https://knowledge.udacity.com/questions/479944"""
     # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
     # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
     # search for "band" should return "The Wild Sax Band".
@@ -308,16 +308,11 @@ def search_artists():
     data = Artist.query.filter(Artist.name.ilike(f"%{query}%")).all()
     artists = []
 
-    current_time = datetime.utcnow()
-
     for artist in data:
-        # count = Show.query.filter_by(artist_id = artist.id).filter(Show.start_time > current_time).count()
-
         artists.append(
             {
                 "id": artist.id,
                 "name": artist.name,
-                # "num_upcoming_shows":count
             }
         )
 
@@ -385,6 +380,7 @@ def create_artist_submission():
     # TODO: modify data to be the data object returned from db insertion
 
     form = ArtistForm(request.form)
+    error = False
 
     if form.validate():
         if (
@@ -419,19 +415,22 @@ def create_artist_submission():
             db.session.commit()
 
             flash("Artist " + request.form["name"] + " was successfully listed!")
-            return render_template("pages/home.html")
 
-        except ValueError as e:
+        except:
             flash(
                 "An error occurred. Artist "
                 + request.form["name"]
                 + " could not be listed. Please try again."
             )
+            error = True
             db.session.rollback()
-            return render_template("forms/new_artist.html", form=form)
 
         finally:
             db.session.close()
+            if error:
+                return render_template("forms/new_artist.html", form=form)
+            else:
+                return redirect(url_for("artists"))
 
     else:
         for fieldName, errorMessages in form.errors.items():
@@ -461,10 +460,9 @@ def edit_artist_submission(artist_id):
     # artist record with ID <artist_id> using the new attributes
 
     form = ArtistForm(request.form)
+    error = False
 
     if form.validate():
-        error = False
-
         try:
             artist = Artist.query.get(artist_id)
             form.populate_obj(artist)
@@ -474,7 +472,6 @@ def edit_artist_submission(artist_id):
             flash(request.form["name"] + " details successfully updated!")
 
         except:
-            db.session.rollback()
             flash(
                 "An error occurred. Artist page of "
                 + request.form["name"]
@@ -482,14 +479,21 @@ def edit_artist_submission(artist_id):
             )
 
             error = True
-            logging.error(sys.exc_info())
+            db.session.rollback()
 
         finally:
             db.session.close()
             if error:
-                abort(500)
+                return redirect(url_for("edit_artist", artist_id=artist_id))
             else:
                 return redirect(url_for("show_artist", artist_id=artist_id))
+
+    else:
+        for fieldName, errorMessages in form.errors.items():
+            for err in errorMessages:
+                flash("An error occurred. " + err)
+
+        return redirect(url_for("edit_artist", artist_id=artist_id))
 
 
 @app.route("/venues/<int:venue_id>/edit", methods=["GET"])
@@ -507,16 +511,15 @@ def edit_venue_submission(venue_id):
     # venue record with ID <venue_id> using the new attributes
 
     form = VenueForm(request.form)
+    error = False
 
     if form.validate():
-        error = False
-
         try:
             venue = Venue.query.get(venue_id)
             form.populate_obj(venue)
             venue.genres = ",".join(form.genres.data)
-            db.session.commit()
 
+            db.session.commit()
             flash(request.form["name"] + "venue details were successfully updated!")
 
         except:
@@ -532,9 +535,16 @@ def edit_venue_submission(venue_id):
         finally:
             db.session.close()
             if error:
-                abort(500)
+                return redirect(url_for("edit_venue", venue_id=venue_id))
             else:
                 return redirect(url_for("show_venue", venue_id=venue_id))
+
+    else:
+        for fieldName, errorMessages in form.errors.items():
+            for err in errorMessages:
+                flash("An error occurred. " + err)
+
+        return redirect(url_for("edit_venue", venue_id=venue_id))
 
 
 #  Shows
@@ -564,7 +574,7 @@ def shows():
             {
                 "venue_id": show.venue_id,
                 "venue_name": show.venue_name,
-                "artist_id": Show.artist_id,
+                "artist_id": show.artist_id,
                 "artist_name": show.artist_name,
                 "artist_image_link": show.artist_image,
                 "start_time": datetime.strftime(
@@ -589,6 +599,7 @@ def create_show_submission():
     # TODO: insert form data as a new Show record in the db, instead
 
     form = ShowForm(request.form)
+    error = False
 
     if form.validate():
         if (
@@ -604,10 +615,20 @@ def create_show_submission():
             )
             return render_template("forms/new_show.html", form=form)
 
+        elif form.artist_id.data not in [
+            i[0] for i in db.session.query(Artist.id).all()
+        ]:
+            flash("The artist id entered is invalid. Please re-enter.")
+            return render_template("forms/new_show.html", form=form)
+
+        elif form.venue_id.data not in [i[0] for i in db.session.query(Venue.id).all()]:
+            flash("The venue id entered is invalid. Please re-enter.")
+            return render_template("forms/new_show.html", form=form)
+
         try:
             show = Show(
                 artist_id=form.artist_id.data,
-                venue_id=form.venue_id.data.upper(),
+                venue_id=form.venue_id.data,
                 start_time=form.start_time.data,
             )
 
@@ -615,23 +636,26 @@ def create_show_submission():
             db.session.commit()
 
             flash("Show was successfully listed!")
-            return render_template("pages/home.html")
 
-        except ValueError as e:
+        except:
             flash(
                 "An error occurred. Your show could not be listed at this time. Please try again."
             )
+            error = True
             db.session.rollback()
-            return render_template("forms/new_show.html", form=form)
 
         finally:
             db.session.close()
+            if error:
+                return render_template("forms/new_show.html", form=form)
+            else:
+                return redirect(url_for("shows"))
 
     else:
         for fieldName, errorMessages in form.errors.items():
             for err in errorMessages:
                 flash("An error occurred. " + err)
-                return render_template("forms/new_show.html", form=form)
+        return render_template("forms/new_show.html", form=form)
 
     # TODO: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Show could not be listed.')
