@@ -34,8 +34,6 @@ from collections import defaultdict
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object("config")
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
 
 
 # ----------------------------------------------------------------------------#
@@ -58,6 +56,9 @@ app.jinja_env.filters["datetime"] = format_datetime
 # Models.
 # ----------------------------------------------------------------------------#
 from models import *
+
+db.init_app(app)
+migrate = Migrate(app, db)
 
 # ----------------------------------------------------------------------------#
 # Controllers.
