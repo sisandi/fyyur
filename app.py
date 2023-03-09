@@ -602,6 +602,14 @@ def create_show_submission():
     error = False
 
     if form.validate():
+        if form.artist_id.data not in [i[0] for i in db.session.query(Artist.id).all()]:
+            flash("The artist id entered is invalid. Please re-enter.")
+            error = True
+
+        if form.venue_id.data not in [i[0] for i in db.session.query(Venue.id).all()]:
+            flash("The venue id entered is invalid. Please re-enter.")
+            error = True
+
         if (
             Show.query.filter(
                 Show.artist_id == form.artist_id.data,
@@ -610,19 +618,10 @@ def create_show_submission():
             ).count()
             > 0
         ):
-            flash(
-                "Looks like this show's already in the books! To edit show information, see the show's details page and click the 'edit' button"
-            )
-            return render_template("forms/new_show.html", form=form)
+            flash("Looks like this show's already in the books!")
+            error = True
 
-        elif form.artist_id.data not in [
-            i[0] for i in db.session.query(Artist.id).all()
-        ]:
-            flash("The artist id entered is invalid. Please re-enter.")
-            return render_template("forms/new_show.html", form=form)
-
-        elif form.venue_id.data not in [i[0] for i in db.session.query(Venue.id).all()]:
-            flash("The venue id entered is invalid. Please re-enter.")
+        if error:
             return render_template("forms/new_show.html", form=form)
 
         try:
