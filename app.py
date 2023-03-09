@@ -56,7 +56,6 @@ app.jinja_env.filters["datetime"] = format_datetime
 # Models.
 # ----------------------------------------------------------------------------#
 from models import *
-
 db.init_app(app)
 migrate = Migrate(app, db)
 
