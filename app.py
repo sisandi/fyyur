@@ -224,13 +224,14 @@ def create_venue_submission():
             flash(request.form["name"] + " was successfully listed!")
             return render_template("pages/home.html")
 
-        except ValueError as e:
+        except:
+            db.session.rollback()
             flash(
                 "An error occurred. Venue "
                 + request.form["name"]
                 + " could not be listed. Please try again."
             )
-            db.session.rollback()
+
             return render_template("forms/new_venue.html", form=form)
 
         finally:
@@ -240,7 +241,8 @@ def create_venue_submission():
         for fieldName, errorMessages in form.errors.items():
             for err in errorMessages:
                 flash("An error occurred. " + err)
-                return render_template("forms/new_venue.html", form=form)
+
+        return render_template("forms/new_venue.html", form=form)
 
     # on successful db insert, flash success
     # TODO: on unsuccessful db insert, flash an error instead.
@@ -435,7 +437,8 @@ def create_artist_submission():
         for fieldName, errorMessages in form.errors.items():
             for err in errorMessages:
                 flash("An error occurred. " + err)
-                return render_template("forms/new_artist.html", form=form)
+
+        return render_template("forms/new_artist.html", form=form)
 
     # TODO: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
@@ -468,8 +471,16 @@ def edit_artist_submission(artist_id):
             artist.genres = ",".join(form.genres.data)
             db.session.commit()
 
+            flash(request.form["name"] + " details successfully updated!")
+
         except:
             db.session.rollback()
+            flash(
+                "An error occurred. Artist page of "
+                + request.form["name"]
+                + " could not be updated. Please try again."
+            )
+
             error = True
             logging.error(sys.exc_info())
 
@@ -506,8 +517,15 @@ def edit_venue_submission(venue_id):
             venue.genres = ",".join(form.genres.data)
             db.session.commit()
 
+            flash(request.form["name"] + "venue details were successfully updated!")
+
         except:
             db.session.rollback()
+            flash(
+                "An error occurred. Venue "
+                + request.form["name"]
+                + " could not be updated. Please try again."
+            )
             error = True
             logging.error(sys.exc_info())
 

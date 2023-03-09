@@ -57,6 +57,7 @@ def upgrade():
     sa.PrimaryKeyConstraint('artist_id', 'venue_id', 'start_time')
     )
     
+    # Seed data
     fyyur_data = [
         sa.insert(Venue).values(
             id= 1,
