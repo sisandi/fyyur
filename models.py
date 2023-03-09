@@ -23,7 +23,9 @@ class Venue(db.Model):
     website = db.Column(db.String(300))
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(300))
-    shows = db.relationship("Show", backref=db.backref("Venue", lazy=True))
+    shows = db.relationship(
+        "Show", backref=db.backref("Venue", lazy=True), cascade="all"
+    )
 
     def __repr__(self):
         return {
@@ -34,7 +36,7 @@ class Venue(db.Model):
             "address": self.address,
             "phone": self.phone,
             "image_link": self.image_link,
-            "genres": [i.strip() for i in self.genres.split(',')],
+            "genres": [i.strip() for i in self.genres.split(",")],
             "facebook_link": self.facebook_link,
             "website": self.website,
             "seeking_talent": self.seeking_talent,
@@ -66,12 +68,13 @@ class Artist(db.Model):
             "state": self.state,
             "phone": self.phone,
             "image_link": self.image_link,
-            "genres": [i.strip() for i in self.genres.split(',')],
+            "genres": [i.strip() for i in self.genres.split(",")],
             "facebook_link": self.facebook_link,
             "website": self.website,
             "seeking_venue": self.seeking_venue,
             "seeking_description": self.seeking_description,
         }
+
 
 # Composite primary key
 class Show(db.Model):
@@ -85,5 +88,5 @@ class Show(db.Model):
         return {
             "artist_id": self.artist_id,
             "venue_id": self.venue_id,
-            "start_time": datetime.strftime(self.start_time, "%Y-%m-%dT%H:%M:%S.%fZ")
+            "start_time": datetime.strftime(self.start_time, "%Y-%m-%dT%H:%M:%S.%fZ"),
         }

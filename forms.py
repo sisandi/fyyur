@@ -1,13 +1,21 @@
 from datetime import datetime
 from flask_wtf import Form
 from wtforms import (
+    IntegerField,
     StringField,
     SelectField,
     SelectMultipleField,
     DateTimeField,
     BooleanField,
 )
-from wtforms.validators import DataRequired, AnyOf, URL, Regexp, Optional, ValidationError
+from wtforms.validators import (
+    DataRequired,
+    AnyOf,
+    URL,
+    Regexp,
+    Optional,
+    ValidationError,
+)
 
 
 class FyyurBaseForm(Form):
@@ -30,19 +38,21 @@ def my_strip_filter(value):
 
 def show_date_check():
     message = "Please enter a present or future show date"
-    
+
     def _show_date_check(form, field):
         if field.data < datetime.today():
             raise ValidationError(message)
-    
-    return  _show_date_check
+
+    return _show_date_check
 
 
 class ShowForm(FyyurBaseForm):
     artist_id = StringField("artist_id")
     venue_id = StringField("venue_id")
     start_time = DateTimeField(
-        "start_time", validators=[DataRequired(), show_date_check()], default=datetime.today()
+        "start_time",
+        validators=[DataRequired(), show_date_check()],
+        default=datetime.today(),
     )
 
 
